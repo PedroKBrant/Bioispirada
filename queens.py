@@ -2,10 +2,10 @@ import numpy as np
 import random
 import copy as cp
 
-population_size = 400
+population_size = 100
 crossover_rate = 0.9
 mutation_rate = 0.4
-num_queens = 64
+num_queens = 8
 
 def checkLeft (positions, init):
     conflict = 0
@@ -66,7 +66,7 @@ def genPopulation(pop, pop_size):
     return pop
 
 #cut-and-crossfill crossover
-def recombinacao(mae1, mae2):
+def recombinacao(mae1, mae2, tipo = "geracional"):
     corte_idx = random.randint(1, (num_queens - 2))
 
     gen1 = np.append(mae1.genotipo[:corte_idx], mae2.genotipo[corte_idx:])
@@ -81,8 +81,14 @@ def recombinacao(mae1, mae2):
     filho1 = individuo(gen1)
     filho2 = individuo(gen2)
     
-    selecao_sobreviventes(filho1)
-    selecao_sobreviventes(filho2)
+    if tipo == "geracional":
+        #maes_filhos = [filho1, filho2, mae1, mae2]
+        selecao_geracional(filho1, filho2, mae1, mae2)
+    else:
+        selecao_sobreviventes(filho1)
+        selecao_sobreviventes(filho2)
+
+
 
 #survival selection replace worst
 def selecao_sobreviventes(individuo):
@@ -92,18 +98,30 @@ def selecao_sobreviventes(individuo):
         pop.remove(pior_indv)
         pop.append(individuo)
 
+#survival selection generation
+def selecao_geracional(filho1, filho2, mae1, mae2):
+
+    if mae1 in pop:
+        pop.remove(mae1)
+    if mae2 in pop:
+        pop.remove(mae2)
+ 
+    individuos= [filho1, filho2, mae1, mae2]
+    melhores_indv = sorted(individuos, key=lambda x: x.fit, reverse=False)
+
+    pop.append(melhores_indv[1])
+    pop.append(melhores_indv[0])
+
 #parent selection: tourney and
 def selecao_pais(tipo = "torneio"):
     if (tipo == "torneio"):
-        maes = np.random.choice(pop, 5)
+        maes = np.random.choice(pop, 5, replace=False)
         maes = sorted(maes, key=lambda x: x.fit, reverse=False)
         return maes[0], maes[1]
     else:
-        new_pop = pop.copy()
-        for i in range(len(pop)):
-            new_pop += (len(pop)-i-1) * [pop[i]]
-        maes = np.random.choice(new_pop, 2)
-        del new_pop
+        sumFitness = sum(ind.fit for ind in pop)
+        p_list = [x.fit/sumFitness for x in pop]
+        maes = np.random.choice(pop, 2, p = p_list, replace=False)
         return maes[0], maes[1]
     
 def mutation(individuo):
@@ -116,11 +134,12 @@ pop = []
 pop = genPopulation(pop, population_size)
 
 
-def main(tipo_selecao):
+def main(tipo_selecao, tipo_sobrevivencia):
     fit_count = population_size
     gen = 0
     solution = pop[0]# ind qualquer
     while (solution.fit > 0 and fit_count <10000):# cada geracao
+
         solution = min(pop, key=lambda x: x.fit)
         gen+=1
         print("\ngen: ", gen)
@@ -129,7 +148,7 @@ def main(tipo_selecao):
 
         if chance <= crossover_rate:
             mae1,mae2 = selecao_pais(tipo_selecao)
-            recombinacao(mae1,mae2)
+            recombinacao(mae1,mae2, tipo_sobrevivencia)
             fit_count+=2
 
         if chance <= mutation_rate:
@@ -138,9 +157,10 @@ def main(tipo_selecao):
             
 
     print("gen: ", gen)
+    print('len pop',len(pop))
     print(str(solution))
 
-main('torneio')
+main('torneio', 'geracional')
 #a = individuo()
 
 # print(str(a))
