@@ -175,7 +175,7 @@ pop = []
 pop = genPopulation(pop, population_size)
 
 
-def main(tipo_selecao, tipo_sobrevivencia):
+def main(tipo_selecao, tipo_sobrevivencia, so):
     fit_count = population_size
     gen = 0
     solution = pop[0]# ind qualquer
@@ -201,14 +201,17 @@ def main(tipo_selecao, tipo_sobrevivencia):
     print('len pop',len(pop))
     print(str(solution))
     print(board_to_fen(gen_board(solution.genotipo)))
- 
+    if so == "linux":
+        path = '/usr/bin/google-chrome'
+    else:
+        path = "C://Program Files (x86)//Google//Chrome//Application//chrome.exe"
     url = 'https://lichess.org/editor/' + board_to_fen(gen_board(solution.genotipo))
     webbrowser.register('chrome',
     None,
-    webbrowser.BackgroundBrowser("C://Program Files (x86)//Google//Chrome//Application//chrome.exe"))
+    webbrowser.BackgroundBrowser(path))
     webbrowser.get('chrome').open(url)
 
-main('torneio', 'geracional')
+main('torneio', 'geracional','linux')
 #a = individuo()
 
 # print(str(a))
