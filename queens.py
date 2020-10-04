@@ -1,11 +1,52 @@
 import numpy as np
 import random
 import copy as cp
+import webbrowser
+import io
 
 population_size = 100
 crossover_rate = 0.9
 mutation_rate = 0.4
 num_queens = 8
+
+def board_to_fen(board):
+    # Use StringIO to build string more efficiently than concatenating
+    with io.StringIO() as s:
+        for row in board:
+            empty = 0
+            for cell in row:
+                c = cell[0]
+                if c in ('w', 'b'):
+                    if empty > 0:
+                        s.write(str(empty))
+                        empty = 0
+                    s.write(cell[1].upper() if c == 'w' else cell[1].lower())
+                else:
+                    empty += 1
+            if empty > 0:
+                s.write(str(empty))
+            s.write('/')
+        # Move one position back to overwrite last '/'
+        s.seek(s.tell() - 1)
+        # If you do not have the additional information choose what to put
+        s.write(' w KQkq - 0 1')
+        return s.getvalue()
+
+def gen_board(positions):
+    board =  [
+    ['em', 'em', 'em', 'em', 'em', 'em', 'em', 'em'],
+    ['em', 'em', 'em', 'em', 'em', 'em', 'em', 'em'],
+    ['em', 'em', 'em', 'em', 'em', 'em', 'em', 'em'],
+    ['em', 'em', 'em', 'em', 'em', 'em', 'em', 'em'],
+    ['em', 'em', 'em', 'em', 'em', 'em', 'em', 'em'],
+    ['em', 'em', 'em', 'em', 'em', 'em', 'em', 'em'],
+    ['em', 'em', 'em', 'em', 'em', 'em', 'em', 'em'],
+    ['em', 'em', 'em', 'em', 'em', 'em', 'em', 'em'],
+]
+    for i in range(len(positions)):
+        board[positions[i]][i] = 'bq'
+    return board
+
 
 def checkLeft (positions, init):
     conflict = 0
@@ -159,6 +200,13 @@ def main(tipo_selecao, tipo_sobrevivencia):
     print("gen: ", gen)
     print('len pop',len(pop))
     print(str(solution))
+    print(board_to_fen(gen_board(solution.genotipo)))
+ 
+    url = 'https://lichess.org/editor/' + board_to_fen(gen_board(solution.genotipo))
+    webbrowser.register('chrome',
+    None,
+    webbrowser.BackgroundBrowser("C://Program Files (x86)//Google//Chrome//Application//chrome.exe"))
+    webbrowser.get('chrome').open(url)
 
 main('torneio', 'geracional')
 #a = individuo()
