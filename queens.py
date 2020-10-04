@@ -4,7 +4,7 @@ import copy as cp
 
 
 
-population_size = 400
+population_size = 100
 crossover_rate = 0.9
 mutation_rate = 0.4
 num_queens = 8
@@ -159,7 +159,7 @@ def main(tipo_selecao):
     print("gen: ", gen)
     print(str(solution))
 
-main('torneio')
+main('sem-torneio')
 #a = individuo()
 
 # print(str(a))
