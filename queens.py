@@ -2,10 +2,30 @@ import numpy as np
 import random
 import copy as cp
 
+
+
 population_size = 400
 crossover_rate = 0.9
 mutation_rate = 0.4
-num_queens = 64
+num_queens = 8
+bin_size =  int(np.log2(num_queens))
+
+def binToNumber(bin):
+    return int(bin.dot(1 << np.arange(bin.size)[::-1]))
+
+def binToArray(bin):
+    count = 0
+    array = np.zeros(num_queens, np.int32)
+    for i in range(num_queens):
+        array[i] = binToNumber(bin[count : count+bin_size])
+        count+=bin_size
+    return array
+
+# def numberToBin(number):
+#     bin = np.frombuffer(np.binary_repr(number).encode(), 'u1') - ord('0')
+#     result = np.zeros(arraySize, dtype = np.uint8)
+#     result[arraySize - bin.shape[0]:] = bin
+#     return result
 
 def checkLeft (positions, init):
     conflict = 0
@@ -44,21 +64,26 @@ class individuo:
         if gen is not None:
             self.genotipo = gen
         else:
-            self.genotipo = np.random.permutation(num_queens)
+            self.genotipo = np.random.randint(2, size = bin_size * num_queens)
         self.fit = self.calculateFitness()
 
     def __str__(self):
         bin_genotipo = ''
-        for gene in self.genotipo:
-            bin_genotipo = bin_genotipo + str(format(gene, '03b'))+' '
-        return 'Genótipo: %s\nFitness:  %s\n\n' % (bin_genotipo, self.fit)  
+        array_repr = binToArray(self.genotipo)
+        for gene in array_repr:
+            bin_genotipo = bin_genotipo + str(format(gene, f'0{bin_size}b'))+' '
+        return 'Genótipo: %s\nFitness:  %s\n\n' % (bin_genotipo, self.fit)
 
     def calculateFitness(self):
         conflict = 0
+        array_repr = binToArray(self.genotipo)
         for i in range(num_queens):
-            conflict+= checkLeft(self.genotipo, i)
-            conflict+= checkRight(self.genotipo, i)
-        return int(conflict/2)
+            conflict+= checkLeft(array_repr, i)
+            conflict+= checkRight(array_repr, i)
+        conflict = conflict/2
+        unique = np.unique(array_repr).size
+        conflict += num_queens-unique
+        return conflict
 
 def genPopulation(pop, pop_size):
     for i in range(pop_size):
@@ -67,20 +92,14 @@ def genPopulation(pop, pop_size):
 
 #cut-and-crossfill crossover
 def recombinacao(mae1, mae2):
-    corte_idx = random.randint(1, (num_queens - 2))
+    corte_idx = random.randint(1, (num_queens*bin_size) - 2)
 
     gen1 = np.append(mae1.genotipo[:corte_idx], mae2.genotipo[corte_idx:])
     gen2 = np.append(mae2.genotipo[:corte_idx], mae1.genotipo[corte_idx:])
 
-    gen1 = list(dict.fromkeys(np.append(list(dict.fromkeys(gen1)), mae2.genotipo[:corte_idx])))
-    gen2 = list(dict.fromkeys(np.append(list(dict.fromkeys(gen2)), mae1.genotipo[:corte_idx])))
-
-    gen1 = gen1[:len(mae2.genotipo)]
-    gen2 = gen2[:len(mae1.genotipo)]
-
     filho1 = individuo(gen1)
     filho2 = individuo(gen2)
-    
+
     selecao_sobreviventes(filho1)
     selecao_sobreviventes(filho2)
 
@@ -105,11 +124,11 @@ def selecao_pais(tipo = "torneio"):
         maes = np.random.choice(new_pop, 2)
         del new_pop
         return maes[0], maes[1]
-    
+
 def mutation(individuo):
-    positions = individuo.genotipo
-    ar = np.random.choice(np.arange(num_queens), 2, replace = False)
-    positions[ar[1]], positions[ar[0]] = positions[ar[0]], positions[ar[1]]
+    genes = individuo.genotipo
+    troca = random.randint(0, (num_queens*bin_size)-1)
+    genes[troca] = (genes[troca]+1)%2
     individuo.calculateFitness()
 
 pop = []
@@ -135,7 +154,7 @@ def main(tipo_selecao):
         if chance <= mutation_rate:
             mutation(pop[random.randint(0,population_size-1)])
             fit_count+=1
-            
+
 
     print("gen: ", gen)
     print(str(solution))
