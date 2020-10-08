@@ -2,6 +2,7 @@ import numpy as np
 import random
 import copy as cp
 import webbrowser
+import statistics as st
 import io
 
 population_size = 100
@@ -196,6 +197,7 @@ def main(tipo_selecao, tipo_sobrevivencia, so):
             mutation(pop[random.randint(0,population_size-1)])
             fit_count+=1
             
+    return gen, tipo_selecao, tipo_sobrevivencia
 
     print("gen: ", gen)
     print('len pop',len(pop))
@@ -211,7 +213,52 @@ def main(tipo_selecao, tipo_sobrevivencia, so):
     webbrowser.BackgroundBrowser(path))
     webbrowser.get('chrome').open(url)
 
-main('torneio', 'geracional','linux')
+# Para cada implementação devem ser feitas 30 execuções e analisar
+#     • Em quantas execuções o algoritmo convergiu (no/30 execuções);
+#     • Em que iteração o algoritmo convergiu (média e desvio padrão);
+#     • Número de indivíduos que convergiram por execução;
+#     • Fitness médio alcançado nas 30 execuções (média e desvio padrão);
+#     • Análise adicional: Quantas iterações são necessárias para toda a população convergir?
+
+vet_gens = []
+vet_convergencias = []
+vet_pop_fit = []
+vet_pop_gen = []
+total_convergiu = 0
+
+def avaliacao(total_convergiu, gen, i):
+    convergiu = 0
+    vet_gens.append(gen)
+    for ind in pop:
+        vet_pop_fit.append(ind.fit)
+        vet_pop_gen.append(ind.genotipo)
+        if ind.fit == 0:
+            convergiu+=1 
+    vet_convergencias.append(convergiu)
+    if convergiu != 0:
+        total_convergiu+=1
+    print(".\n")
+    if i == 29:
+        print("===================================================")
+        print("\nTipo Selecao :",tipo_selecao)
+        print("\nTipo Sobrevivencia :",tipo_sobrevivencia)
+        print("\nPopulation Size : ",population_size)
+        print("\nCrossover Rate : ",crossover_rate)
+        print("\nMutation Size : ",mutation_rate)
+        print("\n1 - Total de vezes que convergiu: ", total_convergiu)
+        
+        print ("\n2 - Média de Iterações: ",st.mean(vet_gens))
+        print ("\nVariância de Iterações: ",st.variance(vet_gens))
+        print("\n3 - Número de indivíduos que convergiram por execução: ")
+        for iten in vet_convergencias:print(iten)
+        print ("\n4 - Média do Fitness: ",st.mean(vet_pop_fit))
+        print ("\nVariância do Fitness: ",st.variance(vet_pop_fit))
+        print("===================================================")
+    return total_convergiu 
+
+for i in range(30):
+    gen, tipo_selecao, tipo_sobrevivencia = main('torneio', 'geracional','linux')
+    total_convergiu = avaliacao(total_convergiu, gen, i)
 #a = individuo()
 
 # print(str(a))
