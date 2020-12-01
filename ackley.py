@@ -66,7 +66,8 @@ def mutation(individuo):
     return
 
 def recombinacao(population):
-    pais = np.random.choice(pop, 2, replace=False)
+    pais = np.random.choice(population, 10, replace=False)
+    pais = sorted(pais, key=lambda x: x.fit, reverse=False)[0:2]
     aux_gen = np.copy(pais[1].genotipo)
     for i in range(gen_size):
         if bool(random.getrandbits(1)):
@@ -167,7 +168,7 @@ def main(pop):
             new_child = recombinacao(pop)
             mutation(new_child)
             new_pop.append(new_child)
-        pop = selecao_sobreviventes(new_pop, pop)
+        pop = selecao_sobreviventes(new_pop, [])
         solution = min(pop, key=lambda x: x.fit)
         gen+=1
         print("\ngen: ", gen)
