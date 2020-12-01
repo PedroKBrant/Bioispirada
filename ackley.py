@@ -70,10 +70,11 @@ def recombinacao(population):
     pais = sorted(pais, key=lambda x: x.fit, reverse=False)[0:2]
     aux_gen = np.copy(pais[1].genotipo)
     for i in range(gen_size):
-        if bool(random.getrandbits(1)):
-            aux_gen[i] = pais[0].genotipo[i]
-        else:
-            aux_gen[i] = pais[1].genotipo[i]
+        aux_gen[i] = (pais[0].genotipo[i] + pais[1].genotipo[i])/2
+        # if bool(random.getrandbits(1)):
+        #     aux_gen[i] = pais[0].genotipo[i]
+        # else:
+        #     aux_gen[i] = pais[1].genotipo[i]
     child = individuo(aux_gen)
     child.sigma = (pais[0].sigma+pais[1].sigma)/2
     return child
@@ -172,7 +173,7 @@ def main(pop):
         solution = min(pop, key=lambda x: x.fit)
         gen+=1
         print("\ngen: ", gen)
-        print("\nSolution: ",solution.fit)
+        print("\nSolution: ", solution.fit)
     return solution, gen, pop
 
 solution, gen, pop = main(pop)
