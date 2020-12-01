@@ -6,7 +6,8 @@ import webbrowser
 import statistics as st
 import io
 
-population_size = 100
+population_size = 40
+pressao = 4
 crossover_rate = 0.9
 mutation_rate = 0.4
 gen_size = 30
@@ -19,12 +20,12 @@ class individuo:
         if gen is not None:
             self.genotipo = gen
         else:
-            self.genotipo = [(random.uniform(-15, 15))
-                      for _ in range(gen_size)]
+            self.genotipo = np.array([(random.uniform(-15, 15))
+                      for _ in range(gen_size)])
         self.fit = self.calculateFitness()
 
     def __str__(self):
-        return 'Genótipo: %s\nSigma: %s\nFitness:  %s\n\n' % (self.genotipo, self.sigma, self.fit)  
+        return 'Genótipo: %s\nSigma: %s\nFitness:  %s\n\n' % (self.genotipo, self.sigma, self.fit)
 
     def ackley(self, x, a=20, b=0.2, c=2 * pi):
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
@@ -43,15 +44,53 @@ def generatePopulation(pop, pop_size):
 
 def mutation(individuo):
     aux_genotipo = np.copy(individuo.genotipo)
+    fit = individuo.fit
+    success = 0
     for i in range(gen_size):
         aux_gen = individuo.genotipo[i]
-        if (aux_gen += random.normalvariate(0, individuo.sigma) > 15): aux_gen = 15
-        elif (aux_gen += random.normalvariate(0, individuo.sigma) < -15): aux_gen = -15
-        
-        
+        individuo.genotipo[i] += random.normalvariate(0, individuo.sigma)
+        if (individuo.genotipo[i] > 15): individuo.genotipo[i] = 15
+        elif (individuo.genotipo[i] < -15): individuo.genotipo[i] = -15
+        new_fit = individuo.calculateFitness()
+        if new_fit < fit:
+            aux_genotipo[i]=individuo.genotipo[i]
+            success+=1
+        individuo.genotipo[i] = aux_gen
+    individuo.genotipo = aux_genotipo
+    individuo.fit = individuo.calculateFitness()
+    Ps = 0.2 * gen_size
+    if success > Ps:
+        individuo.sigma = individuo.sigma/C
+    elif success < Ps:
+        individuo.sigma = individuo.sigma*C
+    return
+
+def recombinacao(population):
+    pais = np.random.choice(pop, 2, replace=False)
+    aux_gen = np.copy(pais[1].genotipo)
+    for i in range(gen_size):
+        if bool(random.getrandbits(1)):
+            aux_gen[i] = pais[0].genotipo[i]
+        else:
+            aux_gen[i] = pais[1].genotipo[i]
+    child = individuo(aux_gen)
+    child.sigma = (pais[0].sigma+pais[1].sigma)/2
+    return child
+
+def selecao_sobreviventes(children, pop):
+    sort = sorted(children + pop, key=lambda x: x.fit, reverse=False)
+    return sort[0:population_size]
+
+
+
+
+
+
+
+
 
 # def mutation(individuo):
-#     # SWAP two random gens 
+#     # SWAP two random gens
 #     positions = individuo.genotipo
 #     ar = np.random.choice(np.arange(gen_size), 2, replace = False)
 #     positions[ar[1]], positions[ar[0]] = positions[ar[0]], positions[ar[1]]
@@ -72,7 +111,7 @@ def mutation(individuo):
 
 #     filho1 = individuo(gen1)
 #     filho2 = individuo(gen2)
-    
+
 #     if tipo == "geracional":
 #         #maes_filhos = [filho1, filho2, mae1, mae2]
 #         selecao_geracional(filho1, filho2, mae1, mae2)
@@ -96,7 +135,7 @@ def mutation(individuo):
 #         pop.remove(mae1)
 #     if mae2 in pop:
 #         pop.remove(mae2)
- 
+
 #     individuos= [filho1, filho2, mae1, mae2]
 #     melhores_indv = sorted(individuos, key=lambda x: x.fit, reverse=False)
 
@@ -115,36 +154,28 @@ def mutation(individuo):
 #         maes = np.random.choice(pop, 2, p = p_list, replace=False)
 #         return maes[0], maes[1]
 
-# pop = []
-# pop = generatePopulation(pop, population_size)
+pop = []
+pop = generatePopulation(pop, population_size)
 
 
-# def main(tipo_selecao, tipo_sobrevivencia):
-#     fit_count = population_size
-#     gen = 0
-#     solution = pop[0]# ind qualquer
-#     while (solution.fit > 0 and fit_count <10000):# cada geracao
+def main(pop):
+    gen = 0
+    solution = pop[0]# ind qualquer
+    while (solution.fit > 0 and gen <10000):# cada geracao
+        new_pop = []
+        for _ in range(population_size*pressao):
+            new_child = recombinacao(pop)
+            mutation(new_child)
+            new_pop.append(new_child)
+        pop = selecao_sobreviventes(new_pop, pop)
+        solution = min(pop, key=lambda x: x.fit)
+        gen+=1
+        print("\ngen: ", gen)
+        print("\nSolution: ",solution.fit)
+    return solution, gen, pop
 
-#         solution = min(pop, key=lambda x: x.fit)
-#         gen+=1
-#         print("\ngen: ", gen)
-#         print("\nSolution: ",solution.fit, "\nfit_count: ",fit_count)
-#         chance = random.random()
+solution, gen, pop = main(pop)
 
-#         if chance <= crossover_rate:
-#             mae1,mae2 = selecao_pais(tipo_selecao)
-#             recombinacao(mae1,mae2, tipo_sobrevivencia)
-#             fit_count+=2
-
-#         if chance <= mutation_rate:
-#             mutation(pop[random.randint(0,population_size-1)])
-#             fit_count+=1
-            
-#     return gen, tipo_selecao, tipo_sobrevivencia
-
-#     print("gen: ", gen)
-#     print('len pop',len(pop))
-#     print(str(solution))
 
 # # Para cada implementação devem ser feitas 30 execuções e analisar
 # #     • Em quantas execuções o algoritmo convergiu (no/30 execuções);
@@ -166,7 +197,7 @@ def mutation(individuo):
 #         vet_pop_fit.append(ind.fit)
 #         vet_pop_gen.append(ind.genotipo)
 #         if ind.fit == 0:
-#             convergiu+=1 
+#             convergiu+=1
 #     vet_convergencias.append(convergiu)
 #     if convergiu != 0:
 #         total_convergiu+=1
@@ -179,7 +210,7 @@ def mutation(individuo):
 #         print("\nCrossover Rate : ",crossover_rate)
 #         print("\nMutation Size : ",mutation_rate)
 #         print("\n1 - Total de vezes que convergiu: ", total_convergiu)
-        
+
 #         print ("\n2 - Média de Iterações: ",st.mean(vet_gens))
 #         print ("\nVariância de Iterações: ",st.variance(vet_gens))
 #         print("\n3 - Número de indivíduos que convergiram por execução: ")
@@ -187,13 +218,13 @@ def mutation(individuo):
 #         print ("\n4 - Média do Fitness: ",st.mean(vet_pop_fit))
 #         print ("\nVariância do Fitness: ",st.variance(vet_pop_fit))
 #         print("===================================================")
-#     return total_convergiu 
+#     return total_convergiu
 
 # for i in range(30):
 #     gen, tipo_selecao, tipo_sobrevivencia = main('torneio', 'geracional')
 #     total_convergiu = avaliacao(total_convergiu, gen, i)
 
-a = individuo()
-print(str(a))
-mutation(a)
-print(str(a))
+# a = individuo()
+# print(str(a))
+# mutation(a)
+# print(str(a))
