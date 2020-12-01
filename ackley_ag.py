@@ -10,6 +10,8 @@ population_size = 100
 crossover_rate = 0.9
 mutation_rate = 0.6
 gen_size = 30
+global fit_count
+fit_count = 0
 
 class individuo:
 
@@ -36,6 +38,8 @@ class individuo:
 
     def calculateFitness(self):
         self.fit = self.ackley(self.genotipo)
+        global fit_count
+        fit_count+=1
         return self.fit
 
 def generatePopulation(pop, pop_size):
@@ -105,10 +109,9 @@ def selecao_pais(tipo = "torneio"):
         return maes[0], maes[1]
 
 def main(tipo_selecao, tipo_sobrevivencia):
-    fit_count = population_size
     gen = 0
     solution = pop[0]# ind qualquer
-    while (solution.fit > 0 and gen <100000):# cada geracao
+    while (solution.fit > 0 and fit_count <1000000):# cada geracao
 
         solution = min(pop, key=lambda x: x.fit)
         gen+=1
@@ -119,11 +122,9 @@ def main(tipo_selecao, tipo_sobrevivencia):
         if chance <= crossover_rate:
             mae1,mae2 = selecao_pais(tipo_selecao)
             recombinacao(mae1,mae2, tipo_sobrevivencia)
-            fit_count+=2
 
         if chance <= mutation_rate:
             mutation(pop[random.randint(0,population_size-1)])
-            fit_count+=1
 
     return gen, tipo_selecao, tipo_sobrevivencia
 

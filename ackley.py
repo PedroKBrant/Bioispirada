@@ -12,6 +12,8 @@ crossover_rate = 0.9
 mutation_rate = 0.4
 gen_size = 30
 C = 0.9
+global fit_count
+fit_count = 0
 
 class individuo:
 
@@ -35,6 +37,8 @@ class individuo:
         return -a * exp(-b * sqrt(s1 / n)) - exp(s2 / n) + a + exp(1)
 
     def calculateFitness(self):
+        global fit_count
+        fit_count+=1
         return self.ackley(self.genotipo)
 
 def generatePopulation(pop, pop_size):
@@ -163,7 +167,7 @@ pop = generatePopulation(pop, population_size)
 def main(pop):
     gen = 0
     solution = pop[0]# ind qualquer
-    while (solution.fit > 0 and gen <10000):# cada geracao
+    while (solution.fit > 0 and fit_count <1000000):# cada geracao
         new_pop = []
         for _ in range(population_size*pressao):
             new_child = recombinacao(pop)
@@ -174,6 +178,7 @@ def main(pop):
         gen+=1
         print("\ngen: ", gen)
         print("\nSolution: ", solution.fit)
+        print("\nfit_count: ", fit_count)
     return solution, gen, pop
 
 solution, gen, pop = main(pop)
