@@ -10,10 +10,12 @@ population_size = 100
 crossover_rate = 0.9
 mutation_rate = 0.4
 gen_size = 30
+C = 0.9
 
 class individuo:
 
     def __init__(self, gen = None):
+        self.sigma = random.uniform(0, 1)
         if gen is not None:
             self.genotipo = gen
         else:
@@ -22,7 +24,7 @@ class individuo:
         self.fit = self.calculateFitness()
 
     def __str__(self):
-        return 'Genótipo: %s\nFitness:  %s\n\n' % (self.genotipo, self.fit)  
+        return 'Genótipo: %s\nSigma: %s\nFitness:  %s\n\n' % (self.genotipo, self.sigma, self.fit)  
 
     def ackley(self, x, a=20, b=0.2, c=2 * pi):
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
@@ -39,15 +41,21 @@ def generatePopulation(pop, pop_size):
         pop.append(individuo())
     return pop
 
-def mutation_1(individuo):
-    # SWAP two random gens 
-    positions = individuo.genotipo
-    ar = np.random.choice(np.arange(gen_size), 2, replace = False)
-    positions[ar[1]], positions[ar[0]] = positions[ar[0]], positions[ar[1]]
-    individuo.calculateFitness()
+def mutation(individuo):
+    aux_genotipo = np.copy(individuo.genotipo)
+    for i in range(gen_size):
+        aux_gen = individuo.genotipo[i]
+        if (aux_gen += random.normalvariate(0, individuo.sigma) > 15): aux_gen = 15
+        elif (aux_gen += random.normalvariate(0, individuo.sigma) < -15): aux_gen = -15
+        
+        
 
-# def mutation_2(individuo):
-#     ar = np.random.choice(np.arange(gen_size), 1, replace = False)
+# def mutation(individuo):
+#     # SWAP two random gens 
+#     positions = individuo.genotipo
+#     ar = np.random.choice(np.arange(gen_size), 2, replace = False)
+#     positions[ar[1]], positions[ar[0]] = positions[ar[0]], positions[ar[1]]
+#     individuo.calculateFitness()
 
 # #cut-and-crossfill crossover
 # def recombinacao(mae1, mae2, tipo = "geracional"):
@@ -187,5 +195,5 @@ def mutation_1(individuo):
 
 a = individuo()
 print(str(a))
-mutation_1(a)
+mutation(a)
 print(str(a))
