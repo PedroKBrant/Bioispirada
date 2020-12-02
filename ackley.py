@@ -5,7 +5,8 @@ import copy as cp
 import webbrowser
 import statistics as st
 import io
-
+import time
+import pickle
 population_size = 40
 pressao = 4
 crossover_rate = 0.9
@@ -70,7 +71,7 @@ def mutation(individuo):
     return
 
 def recombinacao(population):
-    pais = np.random.choice(population, 10, replace=False)
+    pais = np.random.choice(population, 5, replace=False)
     pais = sorted(pais, key=lambda x: x.fit, reverse=False)[0:2]
     aux_gen = np.copy(pais[1].genotipo)
     for i in range(gen_size):
@@ -165,23 +166,44 @@ pop = generatePopulation(pop, population_size)
 
 
 def main(pop):
+    time_array = []
+    fit_med = []
+    best_fit = []
     gen = 0
     solution = pop[0]# ind qualquer
-    while (solution.fit > 0 and fit_count <1000000):# cada geracao
+    time_0 = time.time()
+    time_1 = time_0
+    while (time_1-time_0 < 60): # cada geracao
         new_pop = []
         for _ in range(population_size*pressao):
             new_child = recombinacao(pop)
             mutation(new_child)
             new_pop.append(new_child)
         pop = selecao_sobreviventes(new_pop, [])
-        solution = min(pop, key=lambda x: x.fit)
+        solutions = [x.fit for x in pop]
+        med = sum(solutions)/population_size
+        solution = min(solutions)
+
         gen+=1
         print("\ngen: ", gen)
-        print("\nSolution: ", solution.fit)
+        print("\nSolution: ", solution)
         print("\nfit_count: ", fit_count)
-    return solution, gen, pop
+        time_current = time.time()
+        if gen==1 or time_current-time_1 >= 0.1:
+            time_1 = time.time()
+            time_array.append(time_1-time_0)
+            fit_med.append(med)
+            best_fit.append(solution)
 
-solution, gen, pop = main(pop)
+    return best_fit, fit_med, time_array, gen, solution
+
+for i in range(10):
+    pop = []
+    pop = generatePopulation(pop, population_size)
+    ret = main(pop)
+    with open("ackley_" + str(i), "wb") as f:
+        pickle.Pickler(f).dump(ret)
+
 
 
 # # Para cada implementação devem ser feitas 30 execuções e analisar

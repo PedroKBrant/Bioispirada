@@ -5,6 +5,8 @@ import copy as cp
 import webbrowser
 import statistics as st
 import io
+import time
+import pickle
 
 population_size = 100
 crossover_rate = 0.9
@@ -42,7 +44,8 @@ class individuo:
         fit_count+=1
         return self.fit
 
-def generatePopulation(pop, pop_size):
+def generatePopulation(pop_size):
+    global pop
     for _ in range(pop_size):
         pop.append(individuo())
     return pop
@@ -84,7 +87,7 @@ def selecao_sobreviventes(individuo):
 
 # #survival selection generation
 def selecao_geracional(filho1, filho2, mae1, mae2):
-
+    global pop
     if mae1 in pop:
         pop.remove(mae1)
     if mae2 in pop:
@@ -98,6 +101,7 @@ def selecao_geracional(filho1, filho2, mae1, mae2):
 
 # #parent selection: tourney and
 def selecao_pais(tipo = "torneio"):
+    global pop
     if (tipo == "torneio"):
         maes = np.random.choice(pop, 5, replace=False)
         maes = sorted(maes, key=lambda x: x.fit, reverse=False)
@@ -109,14 +113,15 @@ def selecao_pais(tipo = "torneio"):
         return maes[0], maes[1]
 
 def main(tipo_selecao, tipo_sobrevivencia):
+    global pop
+    time_array = []
+    fit_med = []
+    best_fit = []
     gen = 0
     solution = pop[0]# ind qualquer
-    while (solution.fit > 0 and fit_count <1000000):# cada geracao
-
-        solution = min(pop, key=lambda x: x.fit)
-        gen+=1
-        print("\ngen: ", gen)
-        print("\nSolution: ",solution.fit, "\nfit_count: ",fit_count)
+    time_0 = time.time()
+    time_1 = time_0
+    while (time_1-time_0 < 60):# cada geracao
         chance = random.random()
 
         if chance <= crossover_rate:
@@ -125,12 +130,32 @@ def main(tipo_selecao, tipo_sobrevivencia):
 
         if chance <= mutation_rate:
             mutation(pop[random.randint(0,population_size-1)])
+        time_current = time.time()
 
-    return gen, tipo_selecao, tipo_sobrevivencia
+        solutions = [x.fit for x in pop]
+        med = sum(solutions)/population_size
+        solution = min(solutions)
+        gen+=1
+        print("\ngen: ", gen)
+        print("\nSolution: ",solution, "\nfit_count: ",fit_count)
 
+        if gen==1 or time_current-time_1 >= 0.1:
+            time_1 = time.time()
+            time_array.append(time_1-time_0)
+            fit_med.append(med)
+            best_fit.append(solution)
+
+
+    return best_fit, fit_med, time_array, gen, solution
+
+global pop
 pop = []
-pop = generatePopulation(pop, population_size)
-result = main('torneio', 'worst')
+for i in range(10):
+    pop = []
+    pop = generatePopulation(population_size)
+    ret = main('torneio', 'aa')
+    with open("ackley_ag_" + str(i), "wb") as f:
+        pickle.Pickler(f).dump(ret)
 #     print("gen: ", gen)
 #     print('len pop',len(pop))
 #     print(str(solution))
